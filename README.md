@@ -49,8 +49,8 @@ Team spells watched :
 * Show stacks for Embolden.
 * Find a way to show team buffs from an other bard (Battle Voice, Foe Requiem).
 
-## Contact and Troubleshooting
+## Contact, Troubleshooting, Suggestion
 
 * [GitHub page](https://github.com/Azrou/BardOverlay)
-* Reddit: u/Azrou-Tina/
+* Reddit: [u/Azrou-Tina/](https://www.reddit.com/user/Azrou-Tina)
 * In game: Azrou Tina from Phoenix
