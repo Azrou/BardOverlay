@@ -1,0 +1,791 @@
+﻿<!--
+TODO : 
+- Use CSS animation (faster than JS ?)
+-->
+
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <style>
+        * {
+            font-family: "Arial";
+            font-size: 16px;
+        }
+
+        body, html {
+            margin: 0;
+        }
+
+        body {
+            margin: 0.2em;
+        }
+
+        html {
+            height: 100%;
+
+            overflow: hidden;
+            background-color: transparent;
+        }
+
+        .resizeHandle {
+            background-image: url(handle.png);
+            background-position: bottom right;
+            background-repeat: no-repeat;
+            box-sizing: border-box;
+        }
+
+        * {
+            /*color: #DED7BE;*/
+            color: #000000;
+            text-shadow: -1px 0 2px #FFFFFF, 0 1px 2px #FFFFFF, 1px 0 2px #FFFFFF, 0 -1px 2px #FFFFFF;
+            /*text-shadow: -1px 0 2px #795516, 0 1px 2px #795516, 1px 0 2px #795516, 0 -1px 2px #795516;*/
+            font-weight: bold;
+            /*white-space: nowrap;*/
+        }
+
+        #title {
+            border-bottom: 1px solid #DED7BE;
+        }
+
+        .bar_container {
+            display:flex;
+            align-items:end;
+            margin:3px;
+        }
+        .progress-outer {
+            box-sizing: border-box;
+            position: relative;
+
+            background-color: rgba(0, 0, 0, 0.2);
+            /*border: 1px solid rgba(192, 192, 192, 0.75);*/
+            box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+            margin-left:-3px;
+            z-index:-1;
+            height: 2em;
+            margin-top: 1px;
+            flew-grow:100;
+            align-self:flex-end;
+
+            animation-timing-fuction: ease-out;
+            animation-iteration-count: infinite;
+        }
+
+        .progress-outer:first-child {
+            margin-top: 1px;
+        }
+
+        .progress-bar {
+            opacity: 0.75;
+            /*background-color: purple;*/
+            position: absolute;
+            height: 100%;
+            border-right: 1px solid rgba(255, 255, 255, 0.7);
+            box-sizing: border-box;
+            border-radius: 3px;
+        }
+
+        .icon {
+            width:40px;
+            height:40px;
+        }
+
+        .progress-text {
+            position: absolute;
+            width: 100%;
+            display: table;
+            table-layout: fixed;
+            height: 100%;
+        }
+
+        .label-left {
+            display: table-cell;
+            text-align: left;
+            vertical-align: middle;
+            padding-left: 0.5em;
+            white-space: nowrap;
+        }
+
+        .label-right {
+            display: table-cell;
+            text-align: right;
+            vertical-align: middle;
+            padding-right: 0.5em;
+            
+            color: #E2EBF5;
+            text-shadow: -1px 0 3px #217AA2, 0 1px 3px #217AA2, 1px 0 3px #217AA2, 0 -1px 3px #217AA2;
+            font-weight: 300;
+            white-space: nowrap;
+        }
+
+        @keyframes blink_fast {
+            0% { display: block; opacity: 1; }
+            50% { display: none; opacity: 0; }
+            100% { display: block; opacity: 1; }
+        }
+
+        @keyframes blink_slow {
+            0% { display: block; opacity: 1; }
+            25% { display: none; opacity: 0; }
+            50% { display: block; opacity: 1; }
+        }
+
+        .blink_slow {
+            animation-name: fadeInFromNone;
+            animation-duration: 1s;
+            animation-timing-fuction: ease-out;
+            animation-iteration-count: infinite;
+        }
+
+        .blink_fast {
+            animation-name: fadeInFromNone;
+            animation-duration: 0.5s;
+            animation-timing-fuction: ease-out;
+            animation-iteration-count: infinite;
+        }
+    </style>
+    <script src="jquery-2.1.1.min.js" type="text/javascript"></script>
+    <script>
+        /*
+        var ActXiv = {
+            timerFrames: [
+                {
+                    "color": -16776961, // 0xFF0000FF
+                    "expireCount": -5,
+                    "key": " general|Timer1",
+                    "name": "Timer1",
+                    "startCount": 30,
+                    "tooltip": "",
+                    "warningCount": 10,
+                    "spellTimers": [
+                        { "startTime": createTimestamp(-10) },
+                        { "startTime": createTimestamp(-5) },
+                        { "startTime": createTimestamp() },
+                    ]
+                },
+                {
+                    "color": -65536, // 0xFFFF0000
+                    "expireCount": -5,
+                    "key": " general|Timer2",
+                    "name": "Timer2",
+                    "startCount": 20,
+                    "tooltip": "",
+                    "warningCount": 10,
+                    "spellTimers": [
+                        { "startTime": createTimestamp(-10) },
+                        { "startTime": createTimestamp(-5) },
+                        { "startTime": createTimestamp() },
+                    ]
+                },
+            ]
+        };
+        function createTimestamp(dSecs) {
+            var jsDate = new Date();
+            var offsetMinutes = new Date().getTimezoneOffset();
+            var jsTime = jsDate.getTime() - offsetMinutes * 60 * 1000;
+
+            var delta = 0;
+            if (typeof dSecs == "number") {
+                delta = dSecs * 1000;
+            }
+
+            return jsTime + delta;
+        }
+        */
+
+        var spells = [
+        {
+            en: "Straight Shot",
+            fr: "Tir Droit",
+            /*icon: "icon/straight_shot.png",*/
+            icon: "https://secure.xivdb.com/img/game/000000/000359.png",
+            duration: 20000,
+            permanent: true,
+            display: true,
+            warning: true,
+        },
+        {
+            en: "Iron Jaws",
+            fr: "Mâchoires De Fer",
+            /*icon: "icon/iron_jaws.png",*/
+            icon: "https://secure.xivdb.com/img/game/002000/002608.png",
+            duration: 30000,
+            autorefresh: ["Stormbite", "Caustic Bite"],
+            minOf: ["Stormbite", "Caustic Bite"],
+            permanent: true,
+            display: true,
+            warning: true,
+        },
+        {
+            en: "Stormbite",
+            fr: "Morsure De La Tempête",
+            duration: 30000,
+            display: false,
+            autoapply: ["Mâchoires De Fer"],
+        },
+        {
+            en: "Caustic Bite",
+            fr: "Morsure Caustique",
+            duration: 30000,
+            display: false,
+            autoapply: ["Mâchoires De Fer"],
+        },
+        {
+            en: "Mage's Ballad",
+            fr: "Ballade Du Mage",
+            /* icon: "icon/mages_ballad.png", */
+            icon: "https://secure.xivdb.com/img/game/002000/002602.png",
+            duration: 30000,
+            display: true,
+            overwrite: ["Menuet Du Vagabond", "Péan Martial"],
+            permanent: true,
+            warning: true,
+        },
+        {
+            en: "The Wanderer's Minuet",
+            fr: "Menuet Du Vagabond",
+            /*icon: "icon/wanderers_minuet.png",*/
+            icon: "https://secure.xivdb.com/img/game/002000/002607.png",
+            duration: 30000,
+            display: true,
+            overwrite: ["Ballade Du Mage", "Péan Martial"],
+            permanent: true,
+            warning: true,
+        },
+        {
+            en: "Army's Paeon",
+            fr: "Péan Martial",
+            /*icon: "icon/armys_paeon.png",*/
+            icon: "https://secure.xivdb.com/img/game/002000/002603.png",
+            duration: 30000,
+            display: true,
+            overwrite: ["Menuet Du Vagabond", "Ballade Du Mage"],
+            permanent: true,
+            warning: true,
+        },
+        {
+            en: "Raging Strikes",
+            fr: "Tir Furieux",
+            /*icon: "icon/raging_strikes.png",*/
+            icon: "https://secure.xivdb.com/img/game/000000/000352.png",
+            duration: 20000,
+            display: true
+        },
+        {
+            en: "Trick Attack",
+            fr: "Attaque Sournoise",
+            /*icon: "icon/trick_attack.png",*/
+            icon: "https://secure.xivdb.com/img/game/000000/000618.png",
+            duration: 10000,
+            display: true
+        },
+        {
+            en: "Embolden",
+            fr: "Enhardissement",
+            /*icon: "icon/embolden.png",*/
+            icon: "https://secure.xivdb.com/img/game/003000/003218.png",
+            duration: 20000,
+            display: true
+        },
+        {
+            en: "Battle Litany",
+            fr: "Litanie Combattante",
+            /*icon: "icon/battle_litany.png",*/
+            icon: "https://secure.xivdb.com/img/game/002000/002585.png",
+            duration: 20000,
+            display: true
+        },
+        {
+            en: "Dragon Sight",
+            fr: "Vue De Dragon",
+            /*icon: "icon/dragon_sight.png",*/
+            icon: "https://secure.xivdb.com/img/game/002000/002587.png",
+            duration: 20000,
+            display: true
+        },
+        {
+            en: "Brotherhood",
+            fr: "Fraternité",
+            /*icon: "icon/brotherhood.png",*/
+            icon: "https://secure.xivdb.com/img/game/002000/002542.png",
+            duration: 15000,
+            display: true
+        },
+        {
+            en: "Chain Stratagem",
+            fr: "Stratagèmes Entrelacés",
+            /*icon: "icon/chain_stratagem.png",*/
+            icon: "https://secure.xivdb.com/img/game/002000/002815.png",
+            duration: 15000,
+            display: true
+        },
+        {
+            en: "Hypercharge",
+            fr: "Hypercharge",
+            /*icon: "icon/hypercharge.png",*/
+            icon: "http://xivdb.com/action/2885/hypercharge",
+            duration: 20000,
+            display: true
+        },
+        {
+            en: "The Balance",
+            fr: "La Balance",
+            /*icon: "icon/balance.png",*/
+            icon: "https://secure.xivdb.com/img/game/003000/003110.png",
+            duration: 30000,
+            display: true
+        },
+        {
+            en: "The Arrow",
+            fr: "La Flèche",
+            /*icon: "icon/arrow.png",*/
+            icon: "https://secure.xivdb.com/img/game/003000/003112.png",
+            duration: 30000,
+            display: true
+        },
+        {
+            en: "The Spear",
+            fr: "L'épieu",
+            /*icon: "icon/spear.png",*/
+            icon: "https://secure.xivdb.com/img/game/003000/003113.png",
+            duration: 30000,
+            display: true
+        },
+        ];
+
+        var lang;
+        function getSpellByName(name, updateLang) {
+            var idx = getSpellIndexByName(name, updateLang);
+            if(idx == -1)
+                return null;
+            return spells[idx];
+        }
+        
+        function getSpellIndexByName(name, updateLang) {
+            if(typeof(updateLang) == "undefined") {
+                updateLang = true;
+            }
+        
+            for(var i = 0; i < spells.length; i++) {
+                var skill = spells[i];
+                if(skill.en == name) {
+                    if(updateLang) {
+                        lang = "en";
+                    }
+                    return i;
+                }
+                else if(skill.fr == name) {
+                    if(updateLang) {
+                        lang = "fr";
+                    }
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        function getBarObjectByDiv(div) {
+            for(var i = 0; i < bars.length; i++) {
+                if(bars[i].barElement == div) {
+                    return bars[i];
+                }
+            }
+        }
+        
+        function getTimerBarBySpell(spell) {
+            for(var i = 0; i < bars.length; i++) {
+                if(bars[i].spellTimer.spell == spell) {
+                    return bars[i];
+                }
+            }
+        }
+
+        function refreshByName(spell, startTime, dependencies) {
+            var spell = getSpellByName(spell);
+            var containerDiv = document.getElementById('spelltimer');
+
+            if(typeof(startTime) == 'undefined') {
+                var jsDate = new Date();
+                var offsetMinutes = new Date().getTimezoneOffset();
+                startTime = jsDate.getTime() - offsetMinutes * 60 * 1000;
+            }
+
+            if(typeof(dependencies) == 'undefined') {
+                dependencies = true;
+            }
+
+            var timerFrame = {
+                "name": spell.fr,
+                "key": "general|" + spell.fr,
+                "startCount": spell.duration/1000,
+                "warningCount": 0,
+                "expireCount": 0,
+                "spellTimers": [ { "startTime": startTime } ]
+            };
+            if(dependencies) {
+                processWithDependencies(containerDiv, timerFrame, timerFrame.spellTimers[0]);
+            }
+            else {
+                process(containerDiv, timerFrame, timerFrame.spellTimers[0]);
+            }
+        }
+
+        document.addEventListener("onOverlayStateUpdate", function (e) {
+            if (!e.detail.isLocked) {
+                displayResizeHandle();
+            } else {
+                hideResizeHandle();
+            }
+        });
+
+        function displayResizeHandle() {
+            document.documentElement.classList.add("resizeHandle");
+        }
+
+        function hideResizeHandle() {
+            document.documentElement.classList.remove("resizeHandle");
+        }
+
+
+        function initialize() {
+            update();
+            setInterval("update()", 10);
+        }
+
+        var bars = [];
+
+        function refreshActXiv(timerFrame) {
+            var containerDiv = document.getElementById('spelltimer');
+            timerFrame.spellTimers.forEach(function (spellTimer) {
+                processWithDependencies(containerDiv, timerFrame, spellTimer);
+            });
+        }
+
+        function update() {
+            if (typeof(ActXiv) != 'undefined') {
+                var containerDiv = document.getElementById('spelltimer');
+                if (typeof(ActXiv.timerFrames) != 'undefined') {
+                    ActXiv.timerFrames.forEach(refreshActXiv);
+                }
+                ActXiv = {};
+            }
+			
+            var newBars = [];
+			var active = false;
+            for (var i = 0; i < bars.length; i++) {
+				var spell = getSpellByName(bars[i].spellTimer.name);
+                if (!bars[i].spellTimer.getIsExpired() || spell.permanent) {
+					if(!bars[i].spellTimer.getIsExpired()) {
+						active = true;
+					}
+                    bars[i].updateBar();
+                    newBars.push(bars[i]);
+                } else if(spell.display) {
+                    bars[i].removeBarElement();
+                }
+            }
+            if(active) {
+                bars = newBars;
+            }
+            else {
+                for(var i = 0; i < newBars.length; i++) {
+                        newBars[i].removeBarElement();
+                }
+                bars = [];
+            }
+        }
+
+        function processWithDependencies(container, _tf, _st) {
+            var spell = getSpellByName(_tf.name);
+            if(spell == null) {
+                    return;
+            }
+            
+            if(spell.autorefresh) {
+                function autorefresh(autorefreshName) {
+                    var tfCopy = jQuery.extend(true, {}, _tf);
+                    var stCopy = jQuery.extend(true, {}, _st);
+                    var autorefreshSpell = getSpellByName(autorefreshName, false);
+                    tfCopy.name = autorefreshSpell[lang];
+                    tfCopy.key = "general|" + autorefreshSpell.en;
+                    process(container, tfCopy, stCopy);
+                }
+                spell.autorefresh.forEach(autorefresh);
+            }
+            if(spell.autoapply) {
+                spell.autoapply.forEach(function (autoapply) {
+                    var bar = getTimerBarBySpell(getSpellByName(spell.autoapply));
+                    if(bar == null) {
+                        refreshByName(autoapply, 0, false);
+                    }
+                });
+            }
+            process(container, _tf, _st);
+        }
+
+        function process(container, _tf, _st) {
+            var spell = getSpellByName(_tf.name);
+            if(spell == null) {
+                    return;
+            }
+            
+            if(spell.overwrite) {
+                for(var i = 0; i < spell.overwrite.length; i++) {
+                    var overwrite = spell.overwrite[i];
+                    var spellOverwrite = getSpellByName(overwrite);
+                    for(var j = 0; j < bars.length; j++) {
+                        if(spellOverwrite == bars[j].spellTimer.spell) {
+                            if(spellOverwrite.display) {
+                                bars[j].removeBarElement();
+                            }
+                            bars.splice(j, 1);
+                        }
+                    }
+                }
+            }
+		
+            var spellTimer = new SpellTimer(_tf, _st);
+
+            /*if (spellTimer.getIsExpired()) {
+                return;
+            };*/
+
+            var bar = getTimerBarFromList(spellTimer);
+
+            if (typeof (bar) != 'undefined') {
+                for (var i = bars.length - 1; i >= 0; i--) {
+					var spell = getSpellByName(bars[i].spellTimer.name);
+                    if (bars[i].spellTimer.name == _tf.name) {
+                        if(spell.display) {
+                            bars[i].removeBarElement();
+                        }
+                        bars.splice(i, 1);
+                    }
+                }
+            }
+
+            bar = new TimerBar(spellTimer);
+
+            var spell = getSpellByName(bar.spellTimer.name);
+            if(spell != null) {
+                if(spell.hasOwnProperty("foregroundColor")) {
+                    bar.setBarColor(spell.foregroundColor);
+                }
+                if(spell.hasOwnProperty("icon")) {
+                    bar.setBarIcon(spell.icon);
+                }
+            }
+
+            bars.push(bar);
+
+            if(spell.display) {
+                var idx = getSpellIndexByName(bar.spellTimer.name); var nextElement = null;
+                for(var i = 0; i < container.childNodes.length; i++) {
+                    var childBarDiv = container.childNodes[i];
+                    var childBar = getBarObjectByDiv(childBarDiv);
+                    var childIdx = getSpellIndexByName(childBar.spellTimer.name);
+                    if(idx < childIdx) {
+                        nextElement = childBarDiv;
+                        break;
+                    }
+                }
+                if(nextElement) {
+                    container.insertBefore(bar.barElement, nextElement);
+                }
+                else {
+                    container.appendChild(bar.barElement);
+                }
+            }
+        }
+
+        function getTimerBarFromList(spellTimer) {
+            var uniqueName = spellTimer.name;
+            for (var i = 0; i < bars.length; i++) {
+                if (bars[i].spellTimer.name == spellTimer.name) {
+                    return bars[i];
+                }
+            }
+            return;
+        }
+		
+        var SpellTimer = (function (tf, st) {
+            this.color = tf.color;
+            this.expireCount = tf.expireCount;
+            this.key = tf.key;
+            this.name = tf.name;
+            this.startCount = tf.startCount;
+            this.tooltip = tf.tooltip;
+            this.warningCount = tf.warningCount;
+            this.startTime = st.startTime;
+	    this.spell = getSpellByName(tf.name);
+        });
+        SpellTimer.prototype = {
+            getIsExpired: function () {
+                if (this.getRemaining() < this.expireCount) {
+                    return true;
+                } else {
+                    return false;
+                }
+            },
+            getElapsed: function() {
+                if(typeof(this.spell.minOf) != "undefined") {
+                    var elapsed = 0;
+                    for(var i = 0; i < this.spell.minOf.length; i++) {
+                        var spell = getSpellByName(this.spell.minOf[i]);
+                        var minBar = getTimerBarBySpell(spell);
+                        if(typeof(minBar) != "undefined") {
+                            if(elapsed < minBar.spellTimer.getElapsed()) {
+                                elapsed = minBar.spellTimer.getElapsed();
+                            }
+                        }
+                        else {
+                            elapsed = spell.duration;
+                        }
+                    }
+                    if(elapsed == 0) {
+                        return getElapsedSeconds(this.startTime);
+                    }
+                    return elapsed;
+                }
+                else {
+                    return getElapsedSeconds(this.startTime);
+                }
+            },
+            getRemaining: function () {
+                return this.startCount - this.getElapsed();
+            }
+        };
+
+        var TimerBar = (function (_spellTimer) {
+
+            this.spellTimer = _spellTimer;
+
+            this.uniqueName = this.spellTimer;
+            this.barElement = this._createProgressBarElement();
+            this.labelFunc = (function (_bar) { return ""; });
+
+        });
+        TimerBar.prototype = {
+            setBarColor: function (color) {
+                //this.barDiv.style.backgroundColor = color;
+            },
+            setBarIcon: function (url) {
+                this.barDiv.style["background-image"] = "url(\"" + url + "\")";
+                this.barDiv.style["background-size"] = "500px 500px";
+            },
+            setBarHeight: function (height) {
+                this.barElement.style.height = height;
+            },
+            updateBar: function () {
+                var remaining = this.spellTimer.getRemaining();
+                var timerText;
+                if (remaining <= 0) {
+                    timerText = "DOWN";
+                    this.timeContainer.style["color"]="red";
+                } else {
+                    timerText = remaining.toFixed(0) + "s";
+                    this.timeContainer.style.removeProperty("color");
+                }
+                this.timeContainer.innerText = timerText;
+                var percent = (remaining / (this.spellTimer.spell.duration/1000)) * 100;
+                this.barDiv.style.width = percent + "%";
+
+                if(this.spellTimer.spell.warning) {
+                    if(remaining <= 0) {
+                        this.outerDiv.style.removeProperty("animation-name");
+                    }
+                    else if(remaining < 3) {
+                        this.outerDiv.style["animation-name"] = 'blink_fast';
+                        this.outerDiv.style["animation-duration"] = "0.5s";
+                    }
+                    else if(remaining < 8) {
+                        this.outerDiv.style["animation-name"] = 'blink_slow';
+                        this.outerDiv.style["animation-duration"] = "2s";
+                    }
+                    else {
+                        this.outerDiv.style.removeProperty("animation-name");
+                    }
+                }
+            },
+            _createProgressBarElement: function () {
+                var all = document.createElement("div");
+                all.className = "bar_container";
+
+                this.outerDiv = document.createElement("div");
+                this.outerDiv.className = "progress-outer";
+                this.barDiv = document.createElement("div");
+                this.barDiv.className = "progress-bar";
+                var textDiv = document.createElement("div");
+                textDiv.className = "progress-text";
+                this.outerDiv.style.width = ((this.spellTimer.spell.duration / 30000) * 100) + "%";
+
+                if(typeof(this.spellTimer.spell.icon) != "undefined") {
+                    var img = document.createElement("img");
+                    img.src = this.spellTimer.spell.icon;
+                    img.className = "icon";
+                    all.appendChild(img);
+                }
+
+                this.outerDiv.appendChild(this.barDiv);
+                this.outerDiv.appendChild(textDiv);
+
+                all.appendChild(this.outerDiv);
+
+                var nameSpan = document.createElement("span");
+                nameSpan.className = "timer-name";
+                nameSpan.innerText = this.spellTimer.name;
+
+                this.timeContainer = document.createElement("span");
+                this.timeContainer.className = "label-left";
+
+                textDiv.appendChild(this.timeContainer);
+
+                var percentage = Math.max(0, Math.min(1, this.spellTimer.getRemaining() / this.spellTimer.startCount)) * 100;
+                this.barDiv.style.width = percentage.toFixed(2) + "%";
+                
+                /*setTimeout(function(barDiv) {
+                  barDiv.style.backgroundColor = "#FF0000";
+                }, Math.max(0, (this.spellTimer.getRemaining() - this.spellTimer.warningCount) * 1000), this.barDiv);*/
+
+                var percent = this.spellTimer.getRemaining() / (this.spellTimer.spell.duration / 1000);
+                this.barDiv.style = "width: " + percent + "%";
+                return all;
+            },
+            removeBarElement: function () {
+                this.barElement.parentElement.removeChild(this.barElement);
+            }
+        };
+
+        function getElapsedSeconds(startTime) {
+            var jsDate = new Date();
+            var offsetMinutes = new Date().getTimezoneOffset();
+            var jsTime = jsDate.getTime() - offsetMinutes * 60 * 1000;
+
+            return (jsTime - startTime) / 1000;
+        }
+    </script>
+</head>
+<body onload="initialize();">
+
+    <form onsubmit="return false;">
+	<button onclick="refreshByName('Tir Droit')">Tir Droit</button>
+	<button onclick="refreshByName('Mâchoires De Fer')">Mâchoires De Fer</button>
+	<button onclick="refreshByName('Morsure De La Tempête')">Morsure De La Tempête</button>
+	<button onclick="refreshByName('Morsure Caustique')">Morsure Caustique</button>
+	<button onclick="refreshByName('Ballade Du Mage')">Ballade Du Mage</button>
+	<button onclick="refreshByName('Menuet Du Vagabond')">Menuet Du Vagabond</button>
+	<button onclick="refreshByName('Péan Martial')">Péan Martial</button>
+	<button onclick="refreshByName('Tir Furieux')">Tir Furieux</button>
+	<button onclick="refreshByName('Attaque Sournoise')">Attaque Sournoise</button>
+	<button onclick="refreshByName('Enhardissement')">Enhardissement</button>
+	<button onclick="refreshByName('Litanie Combattante')">Litanie Combattante</button>
+	<button onclick="refreshByName('Fraternité')">Fraternité</button>
+	<button onclick="refreshByName('Stratagèmes Entrelacés')">Stratagèmes Entrelacés</button>
+	<button onclick="refreshByName('Hypercharge')">Hypercharge</button>
+    </form>
+
+    <div id="spelltimer"></div>
+
+</body>
+</html>
